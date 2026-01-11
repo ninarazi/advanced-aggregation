@@ -1,0 +1,5 @@
+{
+  "name": "Advanced Table Aggregator",
+  "description": "A high-performance table widget featuring configurable aggregations, cell selection, and dynamic footer calculations inspired by modern product discovery requirements.",
+  "requestFramePermissions": []
+}
