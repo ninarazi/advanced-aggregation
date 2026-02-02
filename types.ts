@@ -6,6 +6,7 @@ export interface Column {
   label: string;
   type: ColumnType;
   width?: string;
+  unit?: string; // e.g., 'years', 'percent'
 }
 
 export interface TableRow {
@@ -13,6 +14,9 @@ export interface TableRow {
   name: string;
   external: boolean;
   age: number;
+  exp: number;
+  tenure: number;
+  score: number;
   birthday: string;
   manager: {
     name: string;
