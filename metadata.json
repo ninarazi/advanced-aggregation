@@ -1,5 +1,5 @@
 {
-  "name": "cf-advanced-aggregation-new-table-widegt",
+  "name": "cf-advanced-aggregation-new-table-widget",
   "description": "A high-performance table widget featuring configurable aggregations, cell selection, and dynamic footer calculations inspired by modern product discovery requirements.",
   "requestFramePermissions": []
 }
