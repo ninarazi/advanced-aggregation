@@ -12,60 +12,54 @@ This application is a high-fidelity, interactive table widget built for the **cp
 
 ## Core Features
 
-### 1. Multi-Level Grouping
-- Users can group data by any column via the column header menu.
-- Supports nested grouping (e.g., Group by Manager -> then by Country).
-- Active groups are displayed in a "Grouping Area" toolbar with sort toggles and "Expand/Collapse All" functionality.
+### 1. Multi-Level Grouping (Technical Specifications)
+The grouping engine is designed for arbitrary depth and high-performance rendering.
+
+- **Recursive Tree Construction:** 
+  - The application maintains an `activeGroups: string[]` state which defines the hierarchy.
+  - A recursive `build` function traverses the dataset, grouping rows by the current key, then recursively grouping the remaining data using the next keys in the array.
+  - Each node in the tree is typed as a `TableNode` (`GroupNode`, `RowNode`, or `TotalNode`).
+- **Dynamic Flattening Logic:**
+  - The tree is flattened into a linear list (`flattenedList`) only when needed for rendering.
+  - Visibility is controlled by an `expandedIds: Set<string>` state. Only children of nodes present in this set are included in the flattened output.
+- **Group Sorting:**
+  - Each grouping level maintains its own sort order (`groupSortOrders: Record<string, 'asc' | 'desc'>`).
+  - Sorting is applied during the tree construction phase, ensuring that group headers appear in the correct alphanumeric order.
+- **Visual Hierarchy & Indentation:**
+  - Each node carries a `level` property.
+  - CSS-based indentation is calculated as `level * 24px`.
+  - Group nodes feature a "chevron" toggle and a dynamic item count suffix `(n)`.
+- **Automated Totals Injection:**
+  - During the flattening process, "Total" nodes are injected immediately after the last child of an expanded group.
+  - These nodes aggregate all leaf rows belonging to that specific group branch, providing localized context for numeric data.
 
 ### 2. Interaction & Selection
-- **Cell Selection:** Clicking numeric cells or the "Name" column selects them. Selected cells feature a #0078BD border and #E6F2F9 background.
-- **Row Selection:** Standard checkboxes for single rows, group-level selection (selects all children), and a master checkbox in the header.
-- **Selection Persistence:** Clicking anywhere outside the table widget automatically clears all active cell and row selections.
+- **Cell Selection:** Clicking numeric cells or the "Name" column selects them. Selected cells feature a 2px #0078BD border and #E6F2F9 background.
+- **Row Selection:** Supports single rows, group-level selection (which propagates to all recursive children), and a master checkbox.
+- **Selection Persistence:** A global click listener handles automatic deselection when clicking outside the widget boundaries.
 
 ### 3. Real-Time Ad-Hoc Math (Math Bar)
-- When numeric cells are selected, a floating dark footer (Math Bar) appears.
-- It calculates **Sum, Average, Min, Max, and Count** for the selected values.
-- **Unit Logic:** If selected cells have mismatched units (e.g., years vs percent), math calculations are disabled, and a warning is shown.
-- **Configuration:** Users can toggle which aggregation functions are visible via a Sigma (Σ) menu.
+- **State-Driven Stats:** Computes `Sum`, `Average`, `Min`, `Max`, and `Count` in a `useMemo` hook triggered by changes in the `selectedCells` set.
+- **Unit Validation:** A strict check ensures all selected numeric cells share the same `unit` property (e.g., 'years'). If units mismatch, math functions are suppressed to prevent invalid business logic.
 
-### 4. Group Totals
-- When a group is expanded, a "Total" row is rendered at the bottom of that group's child list.
-- These rows show the sum of numeric columns for that specific group, styled with italic labels and blue bold text.
+### 4. Workspace Navigation (Sidebar)
+- A persistent 56px (w-14) sidebar.
+- **Brand Theming:** 
+  - Top Level: Menu/Hamburger.
+  - Workspace 1: Coffee Icon (`#00A3FF`).
+  - Workspace 2: Custom Pin/Logo Icon (`#005E94`).
 
-### 5. Workspace Navigation (Sidebar)
-- A vertical sidebar on the left provides quick navigation.
-- Includes the cplace menu button and custom-styled brand icons:
-  - **Coffee Icon:** Background #00A3FF
-  - **Location/Pin Icon:** Background #005E94
-
-### 6. Column Management
-- **Resizing:** Columns can be manually resized via a handle on the right edge of headers.
-- **Context Menus:** Each column has a "More" (Vertical Dots) menu offering:
-  - Filtering
-  - Ascending/Descending Sort
-  - Pinning
-  - Grouping/Ungrouping
-  - Column reset
+### 5. Column Management
+- **Resizing:** Uses `onMouseDown` with global `mousemove` listeners for smooth width adjustments.
+- **Context Menus:** Functional column headers provide grouping/sorting/filtering controls without cluttering the main UI.
 
 ## Design System & UX
-- **Color Palette:**
-  - Primary Blue: `#0078BD`
-  - Selected Cell BG: `#E6F2F9`
-  - Header Gray: `#5f6b7d`
-  - Sidebar Secondary: `#00A3FF` & `#005E94`
-- **Density:** The "Compact" layout uses a 34px row height for high data density.
-- **Typography:** Uses "Roboto Condensed" throughout to maintain a professional, technical aesthetic.
+- **Primary Color:** `#0078BD` (cplace Blue)
+- **Density:** 34px row height (Compact Mode).
+- **Typography:** "Roboto Condensed" is used for its high readability in data-heavy environments.
+- **Accessibility:** Interactive elements include visual hover states (`tr-hover`) and ARIA-compliant checkbox patterns.
 
-## File Structure
-- `App.tsx`: Main component housing state for grouping, expansion, selection, and sorting.
-- `types.ts`: TypeScript definitions for the `TableRow`, `TableNode` tree structure, and `AggregationFunction`.
-- `data/mock.ts`: Generates 100+ rows of realistic business data.
-- `index.html`: Contains global CSS for the custom selection ring and scrollbar styling.
-- `utils/aggregations.ts`: Pure functions for computing math stats.
-
-## Usage for AI Tools
-When modifying this app, ensure that:
-1. The **Selection Ring** always uses `border: 2px solid #0078BD`.
-2. New features respect the **compact row height (34px)**.
-3. Interactive elements provide **visual feedback** (hovers, active states).
-4. All logic for tree flattening and grouping remains performant for 1000+ rows.
+## Performance Considerations
+- All heavy computations (tree building, list flattening, math stats) are wrapped in `useMemo`.
+- The UI relies on CSS `table-fixed` layout to prevent layout shifts during column resizing or group expansion.
+- Event propagation is strictly managed using `e.stopPropagation()` to ensure nested interactions (like checkboxes inside group rows) don't trigger parent row clicks.
